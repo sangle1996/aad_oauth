@@ -3,6 +3,7 @@ import 'request/authorization_request.dart';
 import 'model/config.dart';
 import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'dart:io';
 
 class RequestCode {
   final StreamController<String> _onCodeListener = StreamController();
@@ -19,9 +20,9 @@ class RequestCode {
   Future<String> requestCode() async {
     String code;
     final urlParams = _constructUrlParams();
-
-    final CustomInAppBrowser browser = new CustomInAppBrowser();
-    browser.openUrlRequest(
+    if(Platform.isIOS){
+      final CustomInAppBrowser browser = new CustomInAppBrowser();
+      browser.openUrlRequest(
         urlRequest: URLRequest(url: Uri.parse('${_authorizationRequest.url}?$urlParams')),
         options: InAppBrowserClassOptions(
             crossPlatform: InAppBrowserOptions(
@@ -34,33 +35,54 @@ class RequestCode {
 
             ),
             ios: IOSInAppBrowserOptions(
-              transitionStyle: IOSUIModalTransitionStyle.CROSS_DISSOLVE,
-              hideToolbarBottom: true
+                transitionStyle: IOSUIModalTransitionStyle.CROSS_DISSOLVE,
+                hideToolbarBottom: true
             ),
             inAppWebViewGroupOptions: InAppWebViewGroupOptions(
                 crossPlatform: InAppWebViewOptions(
-                    javaScriptEnabled: true,
-                    userAgent: _config.userAgent,
+                  javaScriptEnabled: true,
+                  userAgent: _config.userAgent,
                 )
-
             )),
-    );
-    browser.listenStart = (value){
-      if(value == null){
-        _onCodeListener.add(null);
-      }
-      var uri = value;
-      if (uri.queryParameters['error'] != null) {
-        browser.close();
-        _onCodeListener.add(null);
-      }
+      );
+      browser.listenStart = (value){
+        if(value == null){
+          _onCodeListener.add(null);
+        }
+        var uri = value;
+        if (uri.queryParameters['error'] != null) {
+          browser.close();
+          _onCodeListener.add(null);
+        }
 
-      if (uri.queryParameters['code'] != null) {
-        browser.close();
-        _onCodeListener.add(uri.queryParameters['code']);
-      }
-    };
+        if (uri.queryParameters['code'] != null) {
+          browser.close();
+          _onCodeListener.add(uri.queryParameters['code']);
+        }
+      };
+    }else{
+      await _webView.launch(
+        Uri.encodeFull('${_authorizationRequest.url}?$urlParams'),
+        clearCookies: _authorizationRequest.clearCookies,
+        hidden: false,
+        rect: _config.screenSize,
+        userAgent: _config.userAgent,
+      );
 
+      _webView.onUrlChanged.listen((String url) {
+        var uri = Uri.parse(url);
+
+        if (uri.queryParameters['error'] != null) {
+          _webView.close();
+          _onCodeListener.add(null);
+        }
+
+        if (uri.queryParameters['code'] != null) {
+          _webView.close();
+          _onCodeListener.add(uri.queryParameters['code']);
+        }
+      });
+    }
     code = await _onCode.first;
     return code;
   }
