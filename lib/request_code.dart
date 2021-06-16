@@ -61,28 +61,6 @@ class RequestCode {
       }
     };
 
-    // await _webView.launch(
-    //   Uri.encodeFull('${_authorizationRequest.url}?$urlParams'),
-    //   clearCookies: _authorizationRequest.clearCookies,
-    //   hidden: false,
-    //   rect: _config.screenSize,
-    //   userAgent: _config.userAgent,
-    // );
-    //
-    // _webView.onUrlChanged.listen((String url) {
-    //   var uri = Uri.parse(url);
-    //
-    //   if (uri.queryParameters['error'] != null) {
-    //     _webView.close();
-    //     _onCodeListener.add(null);
-    //   }
-    //
-    //   if (uri.queryParameters['code'] != null) {
-    //     _webView.close();
-    //     _onCodeListener.add(uri.queryParameters['code']);
-    //   }
-    // });
-
     code = await _onCode.first;
     return code;
   }
@@ -115,34 +93,28 @@ class CustomInAppBrowser extends InAppBrowser {
   Function listenStart;
   @override
   Future onBrowserCreated() async {
-    print("Browser Created!");
   }
 
   @override
   Future onLoadStart(url) async {
-    print("Started $url");
   }
 
   @override
   Future onLoadStop(url) async {
     listenStart(url);
-    print("Stopped $url");
   }
 
   @override
   void onLoadError(url, code, message) {
     listenStart(url);
-    //print("Can't load $url.. Error: $message");
   }
 
   @override
   void onProgressChanged(progress) {
-    print("Progress: $progress");
   }
 
   @override
   void onExit() {
     listenStart(null);
-    print("Browser closed!");
   }
 }
