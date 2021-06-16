@@ -2,6 +2,7 @@ import 'dart:async';
 import 'request/authorization_request.dart';
 import 'model/config.dart';
 import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class RequestCode {
   final StreamController<String> _onCodeListener = StreamController();
@@ -19,27 +20,68 @@ class RequestCode {
     String code;
     final urlParams = _constructUrlParams();
 
-    await _webView.launch(
-      Uri.encodeFull('${_authorizationRequest.url}?$urlParams'),
-      clearCookies: _authorizationRequest.clearCookies,
-      hidden: false,
-      rect: _config.screenSize,
-      userAgent: _config.userAgent,
+    final CustomInAppBrowser browser = new CustomInAppBrowser();
+    browser.openUrlRequest(
+        urlRequest: URLRequest(url: Uri.parse('${_authorizationRequest.url}?$urlParams')),
+        options: InAppBrowserClassOptions(
+            crossPlatform: InAppBrowserOptions(
+              hideUrlBar: true,
+            ),
+            android: AndroidInAppBrowserOptions(
+              allowGoBackWithBackButton: true,
+              closeOnCannotGoBack: false,
+              shouldCloseOnBackButtonPressed: false,
+
+            ),
+            ios: IOSInAppBrowserOptions(
+              transitionStyle: IOSUIModalTransitionStyle.CROSS_DISSOLVE,
+              hideToolbarBottom: true
+            ),
+            inAppWebViewGroupOptions: InAppWebViewGroupOptions(
+                crossPlatform: InAppWebViewOptions(
+                    javaScriptEnabled: true,
+                    userAgent: _config.userAgent,
+                )
+
+            )),
     );
-
-    _webView.onUrlChanged.listen((String url) {
-      var uri = Uri.parse(url);
-
+    browser.listenStart = (value){
+      if(value == null){
+        _onCodeListener.add(null);
+      }
+      var uri = value;
       if (uri.queryParameters['error'] != null) {
-        _webView.close();
+        browser.close();
         _onCodeListener.add(null);
       }
 
       if (uri.queryParameters['code'] != null) {
-        _webView.close();
+        browser.close();
         _onCodeListener.add(uri.queryParameters['code']);
       }
-    });
+    };
+
+    // await _webView.launch(
+    //   Uri.encodeFull('${_authorizationRequest.url}?$urlParams'),
+    //   clearCookies: _authorizationRequest.clearCookies,
+    //   hidden: false,
+    //   rect: _config.screenSize,
+    //   userAgent: _config.userAgent,
+    // );
+    //
+    // _webView.onUrlChanged.listen((String url) {
+    //   var uri = Uri.parse(url);
+    //
+    //   if (uri.queryParameters['error'] != null) {
+    //     _webView.close();
+    //     _onCodeListener.add(null);
+    //   }
+    //
+    //   if (uri.queryParameters['code'] != null) {
+    //     _webView.close();
+    //     _onCodeListener.add(uri.queryParameters['code']);
+    //   }
+    // });
 
     code = await _onCode.first;
     return code;
@@ -65,5 +107,42 @@ class RequestCode {
     params
         .forEach((String key, String value) => queryParams.add('$key=$value'));
     return queryParams.join('&');
+  }
+}
+
+
+class CustomInAppBrowser extends InAppBrowser {
+  Function listenStart;
+  @override
+  Future onBrowserCreated() async {
+    print("Browser Created!");
+  }
+
+  @override
+  Future onLoadStart(url) async {
+    print("Started $url");
+  }
+
+  @override
+  Future onLoadStop(url) async {
+    listenStart(url);
+    print("Stopped $url");
+  }
+
+  @override
+  void onLoadError(url, code, message) {
+    listenStart(url);
+    //print("Can't load $url.. Error: $message");
+  }
+
+  @override
+  void onProgressChanged(progress) {
+    print("Progress: $progress");
+  }
+
+  @override
+  void onExit() {
+    listenStart(null);
+    print("Browser closed!");
   }
 }
