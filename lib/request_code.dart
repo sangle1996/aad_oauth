@@ -40,6 +40,7 @@ class RequestCode {
             ),
             inAppWebViewGroupOptions: InAppWebViewGroupOptions(
                 crossPlatform: InAppWebViewOptions(
+                  clearCache: true,
                   javaScriptEnabled: true,
                   userAgent: _config.userAgent,
                 )
