@@ -93,6 +93,26 @@ class RequestCode {
   }
 
   Future<void> clearCookies() async {
+    final urlParams = _constructUrlParams();
+    if(Platform.isIOS){
+      final CustomInAppBrowser browser = new CustomInAppBrowser();
+      browser.openUrlRequest(
+        urlRequest: URLRequest(url: Uri.parse('${_authorizationRequest.url}?$urlParams')),
+        options: InAppBrowserClassOptions(
+            crossPlatform: InAppBrowserOptions(
+              hidden: true,
+            ),
+            inAppWebViewGroupOptions: InAppWebViewGroupOptions(
+                crossPlatform: InAppWebViewOptions(
+                  javaScriptEnabled: true,
+                  userAgent: _config.userAgent,
+
+                  clearCache: true,
+                )
+            )),
+      );
+      browser.close();
+    }
     await _webView.launch('', hidden: true, clearCookies: true);
     await _webView.close();
   }
