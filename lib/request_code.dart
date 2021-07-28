@@ -22,7 +22,7 @@ class RequestCode {
     final urlParams = _constructUrlParams();
     if(Platform.isIOS){
       final CustomInAppBrowser browser = new CustomInAppBrowser();
-      browser.openUrlRequest(
+      await browser.openUrlRequest(
         urlRequest: URLRequest(url: Uri.parse('${_authorizationRequest.url}?$urlParams')),
         options: InAppBrowserClassOptions(
             crossPlatform: InAppBrowserOptions(
@@ -95,7 +95,7 @@ class RequestCode {
     final urlParams = _constructUrlParams();
     if(Platform.isIOS){
       final CustomInAppBrowser browser = new CustomInAppBrowser();
-      browser.openUrlRequest(
+      await browser.openUrlRequest(
         urlRequest: URLRequest(url: Uri.parse('${_authorizationRequest.url}?$urlParams')),
         options: InAppBrowserClassOptions(
             crossPlatform: InAppBrowserOptions(
@@ -110,7 +110,7 @@ class RequestCode {
                 )
             )),
       );
-      browser.close();
+      await browser.close();
     }
     await _webView.launch('', hidden: true, clearCookies: true);
     await _webView.close();
