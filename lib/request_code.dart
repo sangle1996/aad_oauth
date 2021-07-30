@@ -110,6 +110,9 @@ class RequestCode {
             ),
         ),
       );
+      browser.onloadStop = (){
+        browser.close();
+      };
     }
     await _webView.launch('', hidden: true, clearCookies: true);
     await _webView.close();
@@ -132,6 +135,7 @@ class RequestCode {
 
 class CustomInAppBrowser extends InAppBrowser {
   Function listenStart;
+  Function onloadStop;
   @override
   Future onBrowserCreated() async {
   }
@@ -144,6 +148,9 @@ class CustomInAppBrowser extends InAppBrowser {
   Future onLoadStop(url) async {
     if(listenStart != null){
       listenStart(url);
+    }
+    if(onloadStop != null){
+      onloadStop();
     }
   }
 
