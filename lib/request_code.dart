@@ -105,12 +105,11 @@ class RequestCode {
                 crossPlatform: InAppWebViewOptions(
                   javaScriptEnabled: true,
                   userAgent: _config.userAgent,
-
                   clearCache: true,
-                )
-            )),
+                ),
+            ),
+        ),
       );
-      await browser.close();
     }
     await _webView.launch('', hidden: true, clearCookies: true);
     await _webView.close();
@@ -143,12 +142,16 @@ class CustomInAppBrowser extends InAppBrowser {
 
   @override
   Future onLoadStop(url) async {
-    listenStart(url);
+    if(listenStart != null){
+      listenStart(url);
+    }
   }
 
   @override
   void onLoadError(url, code, message) {
-    listenStart(url);
+    if(listenStart != null){
+      listenStart(url);
+    }
   }
 
   @override
@@ -157,6 +160,8 @@ class CustomInAppBrowser extends InAppBrowser {
 
   @override
   void onExit() {
-    listenStart(null);
+    if(listenStart != null){
+      listenStart(null);
+    }
   }
 }
